@@ -85,6 +85,8 @@ int main()
    int c = 0;
    reader *rdr = newReader("dictionary.txt");
 
+   if(!rdr)
+      return;
    char buffer[26];
    for(i = 0; i < 50; i++)
    {
