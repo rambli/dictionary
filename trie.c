@@ -202,10 +202,14 @@ int main()
       goto LBL_EXIT;
 
    char buf[26];
-   int j = 2188;
-   while(j--)
+   while(1)
    {
       word_rdr->getNextToken(word_rdr, buf);
+      if(buf[0] == '\0')
+      {
+         printf("No more strings\n");
+         break;
+      }
       if(isStrPresent(head[GET_INDEX(buf[0])], buf))
          printf("Valid word: %s\n", buf);
       memset(buf, 0, sizeof(buf));
