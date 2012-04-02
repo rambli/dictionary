@@ -29,11 +29,12 @@ typedef struct trie_node
 
 typedef struct trie
 {
-   trie_node *head;
-   unsigned int order;
-   void (*addString)(struct trie *t, char *string);
-   bool (*isStringPresent)(struct trie *t, char *string);
-   void (*unInit)(struct trie *t);
+	trie_node *head;
+   	unsigned int order;
+	unsigned long ul_node_count;
+   	void (*addString)(struct trie *t, char *string);
+   	bool (*isStringPresent)(struct trie *t, char *string);
+   	void (*unInit)(struct trie *t);
 }trie;
 
 trie *createTrie(unsigned int order, char key);

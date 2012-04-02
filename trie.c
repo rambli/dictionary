@@ -2,8 +2,6 @@
 #include"reader.h"
 //#include"../hashtable/htbl.h"
 
-static unsigned long ul_node_count = 0;
-static unsigned long ul_free_count = 0;
 static unsigned long ul_char_count = 0;
 
 
@@ -17,10 +15,11 @@ trie* createTrie(unsigned int order, char key)
    if(t)
    {
       t->order = (order > ORDER_LIMIT) ? ORDER_LIMIT:order;
+      t->ul_node_count = 0;
       t->addString = addString;
       t->isStringPresent = isStrPresent;
-      t->head = new_trie_node(t->order);
       t->unInit = freeT;
+      t->head = new_trie_node(t->order);
       if(t->head)
       {
          t->head->data = key;
@@ -40,7 +39,6 @@ trie_node *new_trie_node(unsigned int order)
    node = (trie_node*)malloc(sizeof(trie_node));
    if(node)
    {
-      ul_node_count++;
       node->link = (trie_node**)calloc(order, sizeof(trie_node*));
    }
    return (node);
@@ -86,24 +84,28 @@ void addString(trie *t, char *str)
        * next char to be added and the following node. */
       if(!(add->link[GET_INDEX(*str)]))
       {
-         printf("(new) %c", *str);
+//         printf("(new) %c", *str);
          add->link[GET_INDEX(*str)] = new_trie_node(t->order);
-         add->link[GET_INDEX(*str)]->data = *str;
+         if(add->link[GET_INDEX(*str)])
+         {
+            t->ul_node_count++;
+            add->link[GET_INDEX(*str)]->data = *str;
+         }
       }
       else
       {
-         printf("(old) %c", *str);
+//         printf("(old) %c", *str);
       }
-      printf("->");
+//      printf("->");
       /* Increment str and get next node */
       add = add->link[GET_INDEX(*str)];
       str++;
    }while(--len);
-   printf("\n");
+//   printf("\n");
 }
 
 
-void freeTrie(trie_node **head, unsigned int order)
+void freeTrie(trie *t, trie_node **head, unsigned int order)
 {
    int i = 0;
    if(!(*head))
@@ -113,19 +115,22 @@ void freeTrie(trie_node **head, unsigned int order)
       if((*head)->link[i])
       {
          //printf("link %d on trie %c is valid\n", i, (*head)->data);
-         freeTrie(&((*head)->link[i]), order);
+         freeTrie(t, &((*head)->link[i]), order);
+         t->ul_node_count--;
       }
    }
    //printf("freeing %c\n", (*head)->data);
    free(*head);
    *head = NULL;
-   ul_free_count++;
 }
 void freeT(trie *t)
 {
    if(!t)
       return;
-   freeTrie(&(t->head), t->order);
+   printf("Free'ing trie with %ld nodes\n", t->ul_node_count);
+   freeTrie(t, &(t->head), t->order);
+   if(t->ul_node_count)
+      printf("Memory leak! Failed to free %lu nodes\n", t->ul_node_count);
    free(t);
    t = NULL;
 }
@@ -138,7 +143,7 @@ void freeAllTries(trie_node **head)
    {
       if(head[j])
       {
-         freeTrie(&head[j], 27);
+         freeTrie(NULL, &head[j], 27);
       }
    }
 }
@@ -216,8 +221,11 @@ int main()
       table[GET_INDEX(buffer[0])]->addString(table[GET_INDEX(buffer[0])], buffer);
       memset(buffer, 0, sizeof(buffer));
    }
-
-   printf("Done creating dictionary tree. It has %ld nodes\n", ul_node_count);
+   for(i = 0; i <26; i++)
+   {
+      if(table[i])
+         printf("Table '%c' has %ld nodes\n", table[i]->head->data, table[i]->ul_node_count);
+   }
 
 #if 0
    /* Open words file to cross-reference against our dictionary trie */
@@ -252,12 +260,6 @@ LBL_EXIT:
    {
       if(table[i])
          table[i]->unInit(table[i]);
-   }
-   printf("%d chars stored in %ld nodes\n", ul_char_count, ul_node_count);
-
-   if(ul_node_count != ul_free_count)
-   {
-      printf("There is a memory leak! Nodes alloc'ed: %ld Nodes freed: %ld\n", ul_node_count, ul_free_count);
    }
    /* Close reader as we are done reading tokens */
    if(dict_rdr)
