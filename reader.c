@@ -93,6 +93,11 @@ int main()
    {
       rdr->getNextToken(rdr, buffer);
       printf("Got %s\n", buffer);
+      if(buffer[0] == '\0')
+      {
+         printf("No more strings\n");
+         break;
+      }
       memset(buffer, 0, 26);
    }
    rdr->unInit(rdr);

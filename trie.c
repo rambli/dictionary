@@ -1,39 +1,61 @@
 #include"trie.h"
 #include"reader.h"
-#include"../hashtable/htbl.h"
+//#include"../hashtable/htbl.h"
 
-trie_node *new_trie_node()
+static unsigned long ul_node_count = 0;
+static unsigned long ul_free_count = 0;
+static unsigned long ul_char_count = 0;
+
+
+static trie_node *new_trie_node(unsigned int order);
+static bool isStrPresent(trie *t, char *str);
+
+trie* createTrie(unsigned int order, char key)
 {
-   static int count = 0;
-   trie_node *node = NULL;
-   node = (trie_node*)malloc(sizeof(trie_node));
-   count++;
-#if 0
-   if(!(count % 10))
-      printf("nc: %d\n", count);
-#endif
-   return (node);
+   trie *t = NULL;
+   t = (trie*)calloc(1,sizeof(trie));
+   if(t)
+   {
+      t->order = (order > ORDER_LIMIT) ? ORDER_LIMIT:order;
+      t->addString = addString;
+      t->isStringPresent = isStrPresent;
+      t->head = new_trie_node(t->order);
+      t->unInit = freeT;
+      if(t->head)
+      {
+         t->head->data = key;
+         int iter = t->order;
+         do
+         {
+            t->head->link[iter] = NULL;
+         }while(--iter);
+      }
+      else
+      {
+         free(t);
+         t = NULL;
+      }
+   }
+   return (t);
 }
 
-void createTrie(trie_node **trie)
+trie_node *new_trie_node(unsigned int order)
 {
-   if(NULL == trie)
-      return;
-   *trie = new_trie_node();
-   if(!(*trie))
-      return;
-   int iter = NUM_NODES;
-   do
+   trie_node *node = NULL;
+   node = (trie_node*)malloc(sizeof(trie_node));
+   if(node)
    {
-      (*trie)->link[iter] = NULL;
-   }while(--iter);
+      ul_node_count++;
+      node->link = (trie_node**)malloc(order * sizeof(trie_node*));
+   }
+   return (node);
 }
 
 void addNode(trie_node **head, char data)
 {
    if(!(*head))
    {
-      *head = new_trie_node();
+      *head = new_trie_node(27);
       (*head)->data = data;
       printf("Added %c\n", (*head)->data);
    }
@@ -44,71 +66,73 @@ void addNode(trie_node **head, char data)
    }
 }
 
-void addEntry(trie_node **head, char *str)
+void addString(trie *t, char *str)
 {
-   if(!str)
+   if(!str || !t)
       return;
+   if(!t->head)
+      return;
+
+   /* Check if this is the right trie to add to */
+   if(t->head->data != str[0])
+      return;
+
+   /* First char is trie head, skip it */
+   str++;
    int len = strlen(str) + 1;
- 
-   /* Setup head if NULL */
-   if(!(*head))
-   {
-      createTrie(head);
-      (*head)->data = *str;
-      //printf("\n(new head) %c\n", (*head)->data);
-      str++;
-      len--;
-   }
-   else
-   {
-      str++;
-      len--;
-   }
-   trie_node *add = *head;
+   ul_char_count += len + 1;
+      
+   trie_node *add = t->head;
 
    do
    {
       /* If link is NULL, add a new one and assign it data.
        * If link already present, don't add a node and just skip to 
        * next char to be added and the following node. */
-      if(!add->link[GET_INDEX(*str)])
+      if(!(add->link[GET_INDEX(*str)]))
       {
-         add->link[GET_INDEX(*str)] = new_trie_node();
+         printf("(new) %c", *str);
+         add->link[GET_INDEX(*str)] = new_trie_node(t->order);
          add->link[GET_INDEX(*str)]->data = *str;
-      //   printf("(new) %c", *str);
       }
-      //else
-      //{
-      //   printf("(old) %c", *str);
-      //}
-      //printf("->");
+      else
+      {
+         printf("(old) %c", *str);
+      }
+      printf("->");
       /* Increment str and get next node */
       add = add->link[GET_INDEX(*str)];
       str++;
    }while(--len);
-   //printf("\n");
+   printf("\n");
 }
 
-void freeTrie(trie_node **head)
+
+void freeTrie(trie_node **head, unsigned int order)
 {
-   static int free_count = 0;
    int i = 0;
    if(!(*head))
       return;
-   for(i = 0; i < NUM_NODES; i++)
+   for(i = 0; i < order; i++)
    {
       if((*head)->link[i])
       {
-         freeTrie(&((*head)->link[i]));
+         //printf("link %d on trie %c is valid\n", i, (*head)->data);
+         freeTrie(&((*head)->link[i]), order);
       }
    }
+   //printf("freeing %c\n", (*head)->data);
    free(*head);
    *head = NULL;
-   free_count++;
-#if 0 
-   if(!(free_count % 10))
-      printf("fc:%d\n", free_count);
-#endif
+   ul_free_count++;
+}
+void freeT(trie *t)
+{
+   if(!t)
+      return;
+   freeTrie(&(t->head), t->order);
+   free(t);
+   t = NULL;
 }
 
 void freeAllTries(trie_node **head)
@@ -119,18 +143,21 @@ void freeAllTries(trie_node **head)
    {
       if(head[j])
       {
-         freeTrie(&head[j]);
+         freeTrie(&head[j], 27);
       }
    }
 }
 
-bool isStrPresent(trie_node *head, char *str)
+bool isStrPresent(trie *t, char *str)
 {
-   if(!head || !str)
+   if(!t || !str)
       return;
    int len = strlen(str) + 1;
+   
+   trie_node *head = t->head;
    do
    {
+      //printf("head->data: %c str: %c\n", head->data, *str);
       if(head->data != *str)
          break;
       str++;
@@ -141,7 +168,7 @@ bool isStrPresent(trie_node *head, char *str)
       return TRUE;
    return FALSE;
 }
-
+#if 0
 bool isSubString(trie_node *head, char *string)
 {
    if(!head || !string)
@@ -158,29 +185,25 @@ bool isSubString(trie_node *head, char *string)
       return TRUE;
    return FALSE;
 }
-
+#endif
 int main()
 {
    /* Replace this with a hash table */
-   trie_node **head = NULL;
+   trie **table;
    /* Reader to read tokens */
    reader *dict_rdr = NULL;
    /* Reader to read words generated by module */
    reader *word_rdr = NULL;
-   /* Hashtable to store dictionary */
-   //htbl *hash = NULL;
    int i = 0;
    char buffer[26];
    dict_rdr = newReader("dictionary.txt");
    if(!dict_rdr)
       goto LBL_EXIT;
 
-   //hash = initHash(26);
-   //if(!hash)
-   //   goto LBL_EXIT;
+   //printf("trie_node size: %d\n", sizeof(trie_node));
 
    /* Create temp local hash-table */
-   head = (trie_node**) calloc(26, sizeof(trie_node));
+   table = (trie**) calloc(26, sizeof(trie*));
 
    while(1)
    {
@@ -190,14 +213,22 @@ int main()
          printf("No more strings\n");
          break;
       }
-      addEntry(&head[GET_INDEX(buffer[0])], buffer);
+      printf("Got %s\n", buffer);
+      if(!table[GET_INDEX(buffer[0])])
+      {
+         table[GET_INDEX(buffer[0])] = createTrie(27, buffer[0]);
+         printf("Created tree rooted at '%c'\n", table[GET_INDEX(buffer[0])]->head->data);
+      }
+         
+      table[GET_INDEX(buffer[0])]->addString(table[GET_INDEX(buffer[0])], buffer);
       memset(buffer, 0, sizeof(buffer));
    }
 
-   printf("Done creating dictionary tree\n");
+   printf("Done creating dictionary tree. It has %ld nodes\n", ul_node_count);
 
+#if 0
    /* Open words file to cross-reference against our dictionary trie */
-   word_rdr = newReader("OUT");
+   word_rdr = newReader("dictionary.txt");
    if(!word_rdr)
       goto LBL_EXIT;
 
@@ -210,12 +241,31 @@ int main()
          printf("No more strings\n");
          break;
       }
-      if(isStrPresent(head[GET_INDEX(buf[0])], buf))
+      if(table[GET_INDEX(buf[0])]->isStringPresent(table[GET_INDEX(buf[0])], buf))
          printf("Valid word: %s\n", buf);
       memset(buf, 0, sizeof(buf));
    }
+#endif   
+   int d = 0;
+   while(1)
+   {
+      scanf("%d", &d);
+      if(d)
+         break;
+   }
 LBL_EXIT:
-   freeAllTries(head);
+   //freeAllTries(head);
+   for(i = 0; i <26; i++)
+   {
+      if(table[i])
+         table[i]->unInit(table[i]);
+   }
+   printf("%d chars stored in %ld nodes\n", ul_char_count, ul_node_count);
+
+   if(ul_node_count != ul_free_count)
+   {
+      printf("There is a memory leak! Nodes alloc'ed: %ld Nodes freed: %ld\n", ul_node_count, ul_free_count);
+   }
    /* Close reader as we are done reading tokens */
    if(dict_rdr)
    {
@@ -227,12 +277,5 @@ LBL_EXIT:
       word_rdr->unInit(word_rdr);
       word_rdr = NULL;
    }
-   /*
-   if(hash)
-   {
-      hash->freeHash(hash);
-      hash = NULL;
-   }
-   */
-   free(head);
+   free(table);
 }
