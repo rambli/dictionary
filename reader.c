@@ -72,10 +72,10 @@ void getNextToken(reader *self, char *buffer)
          buffer[i++] = c;
          c = fgetc(attr->fileHandle);
       }
-      buffer[i] = '\0';
       /* Read in one more to get rid of the new line char */
       c = fgetc(attr->fileHandle);
    }
+   buffer[i] = '\0';
 }
 
 #ifdef UNIT_TEST
@@ -83,7 +83,8 @@ int main()
 {
    int i = 0;
    int c = 0;
-   reader *rdr = newReader("dictionary.txt");
+   //reader *rdr = newReader("dictionary.txt");
+   reader *rdr = newReader("OUT");
 
    if(!rdr)
       return;
@@ -91,7 +92,7 @@ int main()
    for(i = 0; i < 50; i++)
    {
       rdr->getNextToken(rdr, buffer);
-      printf("Got %s", buffer);
+      printf("Got %s\n", buffer);
       memset(buffer, 0, 26);
    }
    rdr->unInit(rdr);
