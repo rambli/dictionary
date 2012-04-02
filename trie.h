@@ -9,7 +9,11 @@
 #define ORDER_LIMIT  512
 #define GET_INDEX(a)		(a > 0)?(((a) - 'a')+1):a
 					
-
+typedef enum
+{
+	TRIE_DATA_TYPE_NUMBERS = 10,
+	TRIE_DATA_TYPE_STRING = 27,
+}TRIE_TYPE;
 
 typedef enum
 {
