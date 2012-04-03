@@ -36,7 +36,7 @@ trie* createTrie(unsigned int order, char key)
 trie_node *new_trie_node(unsigned int order)
 {
    trie_node *node = NULL;
-   node = (trie_node*)malloc(sizeof(trie_node));
+   node = (trie_node*)calloc(1, sizeof(trie_node));
    if(node)
    {
       node->link = (trie_node**)calloc(order, sizeof(trie_node*));
