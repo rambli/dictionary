@@ -105,17 +105,17 @@ void addString(trie *t, char *str)
 }
 
 
-void freeTrie(trie *t, trie_node **head, unsigned int order)
+void freeTrie(trie *t, trie_node **head)
 {
    int i = 0;
-   if(!(*head))
+   if(!(*head) || !t)
       return;
-   for(i = 0; i < order; i++)
+   for(i = 0; i < t->order; i++)
    {
       if((*head)->link[i])
       {
          //printf("link %d on trie %c is valid\n", i, (*head)->data);
-         freeTrie(t, &((*head)->link[i]), order);
+         freeTrie(t, &((*head)->link[i]));
          t->ul_node_count--;
       }
    }
@@ -128,7 +128,7 @@ void freeT(trie *t)
    if(!t)
       return;
    printf("Free'ing trie with %ld nodes\n", t->ul_node_count);
-   freeTrie(t, &(t->head), t->order);
+   freeTrie(t, &(t->head));
    if(t->ul_node_count)
       printf("Memory leak! Failed to free %lu nodes\n", t->ul_node_count);
    free(t);
@@ -143,7 +143,7 @@ void freeAllTries(trie_node **head)
    {
       if(head[j])
       {
-         freeTrie(NULL, &head[j], 27);
+         freeTrie(NULL, &head[j]);
       }
    }
 }
