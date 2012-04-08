@@ -135,19 +135,6 @@ void freeT(trie *t)
    t = NULL;
 }
 
-void freeAllTries(trie_node **head)
-{
-   int j = 0;
-   /* Free all nodes from all trees */
-   for(j = 0; j < 27; j++)
-   {
-      if(head[j])
-      {
-         freeTrie(NULL, &head[j]);
-      }
-   }
-}
-
 bool isStrPresent(trie *t, char *str)
 {
    if(!t || !str)
@@ -255,7 +242,6 @@ int main()
          break;
    }
 LBL_EXIT:
-   //freeAllTries(head);
    for(i = 0; i <26; i++)
    {
       if(table[i])
