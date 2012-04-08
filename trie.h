@@ -40,4 +40,4 @@ typedef struct trie
 trie *createTrie(unsigned int order, char key);
 void addString(trie *t, char *string);
 bool isStringPresent(trie *t, char *string);
-void freeT(trie *t);
+void freeTrie(trie *t);

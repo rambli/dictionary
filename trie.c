@@ -18,7 +18,7 @@ trie* createTrie(unsigned int order, char key)
       t->ul_node_count = 0;
       t->addString = addString;
       t->isStringPresent = isStrPresent;
-      t->unInit = freeT;
+      t->unInit = freeTrie;
       t->head = new_trie_node(t->order);
       if(t->head)
       {
@@ -105,7 +105,7 @@ void addString(trie *t, char *str)
 }
 
 
-void freeTrie(trie *t, trie_node **head)
+static void freeT(trie *t, trie_node **head)
 {
    int i = 0;
    if(!(*head) || !t)
@@ -115,7 +115,7 @@ void freeTrie(trie *t, trie_node **head)
       if((*head)->link[i])
       {
          //printf("link %d on trie %c is valid\n", i, (*head)->data);
-         freeTrie(t, &((*head)->link[i]));
+         freeT(t, &((*head)->link[i]));
          t->ul_node_count--;
       }
    }
@@ -123,19 +123,19 @@ void freeTrie(trie *t, trie_node **head)
    free(*head);
    *head = NULL;
 }
-void freeT(trie *t)
+void freeTrie(trie *t)
 {
    if(!t)
       return;
    printf("Free'ing trie with %ld nodes\n", t->ul_node_count);
-   freeTrie(t, &(t->head));
+   freeT(t, &(t->head));
    if(t->ul_node_count)
       printf("Memory leak! Failed to free %lu nodes\n", t->ul_node_count);
    free(t);
    t = NULL;
 }
 
-bool isStrPresent(trie *t, char *str)
+static bool isStrPresent(trie *t, char *str)
 {
    if(!t || !str)
       return;
