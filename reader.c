@@ -24,6 +24,7 @@ reader* newReader(char *filePath)
       }
       else
       {
+         fclose(handle);
          free(self->attr);
          free(self);
          self = NULL;
